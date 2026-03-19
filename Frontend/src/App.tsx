@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import "./App.css"
 
 interface ResearchResponse {
     summary: string
@@ -30,35 +31,41 @@ function App() {
 
     // UI goes here
     return (
-        <div>
-          <h1> Research Assistant</h1>
-           <input 
-              type='text'
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder='Enter a research topic...'
-            />
-            <button type="button" onClick={handleResearch} disabled={isLoading}>
-              {isLoading ? "Researching..." : "Research"}
-            </button>
-            {isLoading && <p>Researching, please wait...</p>}
-            {response && (
-              <div>
-                <ReactMarkdown>{response.summary}</ReactMarkdown>
-              </div>
-            )}
-            {response && (
+    <div className="container">
+      <h1>Research Assistant</h1>
+      <div className="search-bar">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Enter a research topic..."
+        />
+        <button onClick={handleResearch} disabled={isLoading}>
+          {isLoading ? "Researching..." : "Research"}
+        </button>
+      </div>
+      {isLoading && <p className="loading">Researching, please wait...</p>}
+      {response && (
+        <div className="results">
+          <div className="summary">
+            <ReactMarkdown>{response.summary}</ReactMarkdown>
+          </div>
+          {response.sources.length > 0 && (
+            <div className="sources">
+              <h3>Sources</h3>
               <ul>
-                  {response.sources.map((source, index) => (
-                      <li key={index}>
-                          <a href={source} target="_blank">{source}</a>
-                      </li>
-                  ))}
+                {response.sources.map((source, index) => (
+                  <li key={index}>
+                    <a href={source} target="_blank" rel="noreferrer">{source}</a>
+                  </li>
+                ))}
               </ul>
-            )}
-            
+            </div>
+          )}
         </div>
-    )
+        )}
+    </div>
+  )
 }
 
 export default App;
