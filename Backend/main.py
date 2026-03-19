@@ -34,7 +34,8 @@ async def research( request: ResearchRequest ):
     # Split summary and sources
     if "Sources" in output:
         parts = output.split("Sources")
-        summary = parts[0].strip()
+        # Remove the trailing "4." or "## 4." from the summary
+        summary = re.sub(r'#+\s*4\.?\s*$', '', parts[0]).strip()
         # Extract URLs from markdown links [text](url)
         sources = re.findall(r'\(https?://[^\)]+\)', parts[1])
         # Clean the parentheses off
