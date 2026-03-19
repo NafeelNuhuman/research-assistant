@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import agent
 import config as app_config
+import re
 
 app = FastAPI()
 
@@ -28,13 +29,16 @@ async def root():
 @app.post("/research/",  response_model=ResearchResponse)
 async def research( request: ResearchRequest ):
     output = agent.research(request.topic)
+    print("RAW OUTPUT:", output)  # add this temporarily
 
     # Split summary and sources
     if "Sources" in output:
         parts = output.split("Sources")
         summary = parts[0].strip()
-        # Extract URLs from the source section
-        sources = [line.strip() for line in parts[1].splitlines() if "http" in line]
+        # Extract URLs from markdown links [text](url)
+        sources = re.findall(r'\(https?://[^\)]+\)', parts[1])
+        # Clean the parentheses off
+        sources = [s.strip('()') for s in sources]
     else:
         summary = output
         sources = []

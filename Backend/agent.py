@@ -38,7 +38,7 @@ def get_agent():
         1. Overview
         2. Key Findings
         3. Conflicting Information (if any)
-        4. Sources
+        4. Sources (Structure sources as [text](url))
         Base your answer strictly on what you found. If you cannot find 
         sufficient information, state that clearly."""
     return create_agent(model = llm, tools=tools, system_prompt=prompt)
