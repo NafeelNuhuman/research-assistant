@@ -1,4 +1,8 @@
+import os
+
 LLM_MODEL = 'qwen3.5:397b-cloud'
 FASTAPI_PORT = 8000
 MAX_ITERATIONS = 10
 MAX_SEARCH_RESULTS = 5
+SEARCH_PROVIDER = os.getenv('SEARCH_PROVIDER', 'duckduckgo')
+TAVILY_API_KEY = os.getenv('TAVILY_API_KEY', '')

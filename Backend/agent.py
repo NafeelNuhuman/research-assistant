@@ -23,8 +23,17 @@ def search_web(query:str) -> str:
     """Search the web for a query and return a summary of the top results.
     Use this to find relevant information and sources for the research question."""
     try:
-        search = DuckDuckGoSearchResults()
-        return search.run(query)
+        if app_config.SEARCH_PROVIDER == 'tavily':
+            from tavily import TavilyClient
+            client = TavilyClient(api_key=app_config.TAVILY_API_KEY)
+            response = client.search(query=query, max_results=app_config.MAX_SEARCH_RESULTS)
+            results = []
+            for r in response["results"]:
+                results.append(f"[{r['title']}]({r['url']}): {r.get('content', '')}")
+            return "\n\n".join(results)
+        else:
+            search = DuckDuckGoSearchResults(num_results=app_config.MAX_SEARCH_RESULTS)
+            return search.run(query)
     except Exception as e:
         return f"Error during web search: {str(e)}"
     
