@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import agent
 import config as app_config
 import re
+import uuid
 
 app = FastAPI()
 
@@ -16,6 +17,7 @@ app.add_middleware(
 
 class ResearchRequest(BaseModel):
     topic: str
+    session_id: str 
 
 class ResearchResponse(BaseModel):
     summary: str
@@ -25,11 +27,14 @@ class ResearchResponse(BaseModel):
 async def root():
     return {"message": "Hello World"}
 
+@app.get("/session")
+async def getSessionId():
+    return {"session_id":str(uuid.uuid4())}
+
 
 @app.post("/research/",  response_model=ResearchResponse)
-async def research( request: ResearchRequest ):
-    output = agent.research(request.topic)
-    print("RAW OUTPUT:", output)  # add this temporarily
+async def research( request: ResearchRequest):
+    output = agent.research(topic=request.topic, session_id=request.session_id)
 
     # Split summary and sources
     if "Sources" in output:

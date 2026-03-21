@@ -3,8 +3,11 @@ from langchain.agents import create_agent
 from langchain_core.tools import tool
 from bs4 import BeautifulSoup
 from langchain_community.tools import DuckDuckGoSearchResults
+from langgraph.checkpoint.memory import MemorySaver
 import requests
 import config as app_config
+
+checkpointer = MemorySaver()
 
 @tool
 def fetch_page_content(url:str) -> str:
@@ -41,12 +44,13 @@ def get_agent():
         4. Sources (Structure sources as [text](url))
         Base your answer strictly on what you found. If you cannot find 
         sufficient information, state that clearly."""
-    return create_agent(model = llm, tools=tools, system_prompt=prompt)
+    return create_agent(model = llm, tools=tools, system_prompt=prompt,checkpointer=checkpointer)
 
-def research(topic:str):
+def research(topic:str, session_id:str) -> str:
     agent = get_agent()
     result = agent.invoke(
     {"messages": [{"role": "user", "content": topic}]},
-    config={"recursion_limit": app_config.MAX_ITERATIONS}
+    config={"recursion_limit": app_config.MAX_ITERATIONS,
+            "configurable":{"thread_id":session_id}}
     )
     return result["messages"][-1].content

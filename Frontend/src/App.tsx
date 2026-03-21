@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import "./App.css"
 
@@ -11,6 +11,20 @@ function App() {
     const [query, setQuery] = useState<string>("")
     const [response, setResponse] = useState<ResearchResponse | null>(null)
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [sessionId, setSessionId] = useState<string>("")
+    
+    useEffect(() => {
+    const fetchSession = async () => {
+        try {
+            const res = await fetch("http://localhost:8000/session")
+            const data = await res.json()
+            setSessionId(data.session_id)
+        } catch (error) {
+            console.error("Error fetching session:", error)
+        }
+      }
+      fetchSession()
+    }, [])
 
     const handleResearch = async () => {
         setIsLoading(true)
@@ -18,7 +32,7 @@ function App() {
             const res = await fetch("http://localhost:8000/research/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ topic: query })
+                body: JSON.stringify({ topic: query,session_id: sessionId })
             })
             const data = await res.json()
             setResponse(data)
