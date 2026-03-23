@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
 import agent
 import config as app_config
 import re
@@ -50,6 +51,16 @@ async def research( request: ResearchRequest):
         sources = []
 
     return ResearchResponse(summary=summary,sources=sources)    
+
+@app.post("/research/stream")
+async def research_stream(request: ResearchRequest):
+    return StreamingResponse(
+        agent.research_stream(
+            topic=request.topic,
+            session_id=request.session_id
+        ),
+        media_type="text/event-stream"
+    )
     
 
 if __name__ == "__main__":

@@ -2,16 +2,11 @@ import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import "./App.css"
 
-interface ResearchResponse {
-    summary: string
-    sources: string[]
-}
-
 function App() {
     const [query, setQuery] = useState<string>("")
-    const [response, setResponse] = useState<ResearchResponse | null>(null)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [sessionId, setSessionId] = useState<string>("")
+    const [streamedResponse, setStreamedResponse] = useState<string>("")
     
     useEffect(() => {
     const fetchSession = async () => {
@@ -28,14 +23,22 @@ function App() {
 
     const handleResearch = async () => {
         setIsLoading(true)
+        setStreamedResponse("")
         try {
-            const res = await fetch("http://localhost:8000/research/", {
+            const res = await fetch("http://localhost:8000/research/stream", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ topic: query,session_id: sessionId })
             })
-            const data = await res.json()
-            setResponse(data)
+            const reader = res.body!.getReader()
+            const decoder = new TextDecoder()
+
+            while(true){
+              const { done, value } = await reader.read()
+              if(done) break
+              const chunk = decoder.decode(value)
+              setStreamedResponse(prev => prev + chunk)
+            }
         } catch (error) {
             console.error("Error:", error)
         } finally {
@@ -59,23 +62,11 @@ function App() {
         </button>
       </div>
       {isLoading && <p className="loading">Researching, please wait...</p>}
-      {response && (
+      {streamedResponse && (
         <div className="results">
           <div className="summary">
-            <ReactMarkdown>{response.summary}</ReactMarkdown>
+            <ReactMarkdown>{streamedResponse}</ReactMarkdown>
           </div>
-          {response.sources.length > 0 && (
-            <div className="sources">
-              <h3>Sources</h3>
-              <ul>
-                {response.sources.map((source, index) => (
-                  <li key={index}>
-                    <a href={source} target="_blank" rel="noreferrer">{source}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
         )}
     </div>

@@ -4,6 +4,7 @@ from langchain_core.tools import tool
 from bs4 import BeautifulSoup
 from langchain_community.tools import DuckDuckGoSearchResults
 from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.messages import AIMessageChunk
 import requests
 import config as app_config
 
@@ -54,3 +55,17 @@ def research(topic:str, session_id:str) -> str:
             "configurable":{"thread_id":session_id}}
     )
     return result["messages"][-1].content
+
+def research_stream(topic:str, session_id:str):
+    agent =  get_agent()
+    for chunk in agent.stream(
+        {"messages": [{"role": "user", "content": topic}]},
+        config={"recursion_limit": app_config.MAX_ITERATIONS,
+                "configurable":{"thread_id":session_id}},
+        stream_mode="messages"        
+    ):
+        message = chunk[0]
+        if isinstance(message, AIMessageChunk) and message.content:
+            if not message.tool_calls: 
+                yield message.content
+
