@@ -23,6 +23,43 @@ def fetch_page_content(url:str) -> str:
         return f"Error fetching page content: {str(e)}"
     
 @tool
+def search_wikipedia(query: str) -> str:
+    """Search Wikipedia for a query and return a summary of the top result.
+    Use this to get encyclopedic background information on a topic."""
+    try:
+        search_url = "https://en.wikipedia.org/w/api.php"
+        search_params = {
+            "action": "query",
+            "list": "search",
+            "srsearch": query,
+            "format": "json",
+            "srlimit": 1,
+        }
+        search_resp = requests.get(search_url, params=search_params)
+        search_resp.raise_for_status()
+        results = search_resp.json().get("query", {}).get("search", [])
+        if not results:
+            return "No Wikipedia results found."
+        title = results[0]["title"]
+        summary_params = {
+            "action": "query",
+            "prop": "extracts",
+            "exintro": True,
+            "explaintext": True,
+            "titles": title,
+            "format": "json",
+        }
+        summary_resp = requests.get(search_url, params=summary_params)
+        summary_resp.raise_for_status()
+        pages = summary_resp.json().get("query", {}).get("pages", {})
+        page = next(iter(pages.values()))
+        extract = page.get("extract", "No content available.")
+        page_url = f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}"
+        return f"**{title}**\n{extract[:3000]}\n\nSource: {page_url}"
+    except Exception as e:
+        return f"Error fetching Wikipedia content: {str(e)}"
+
+@tool
 def search_web(query:str) -> str:
     """Search the web for a query and return a summary of the top results.
     Use this to find relevant information and sources for the research question."""
@@ -35,7 +72,7 @@ def search_web(query:str) -> str:
 
 def get_agent():
     llm = ChatOllama(model=app_config.LLM_MODEL)
-    tools = [search_web, fetch_page_content]
+    tools = [search_web, search_wikipedia, fetch_page_content]
     prompt = """You are a research assistant. When given a topic, 
         use your tools to search the web and read relevant sources. 
         Produce a structured summary with these sections:
