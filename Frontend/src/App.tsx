@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import "./App.css"
 
@@ -11,9 +11,9 @@ function App() {
     const [query, setQuery] = useState<string>("")
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [sessionId, setSessionId] = useState<string>("")
-    const [streamedResponse, setStreamedResponse] = useState<string>("")
     const [messages, setMessages] = useState<Array<Message>>([])
-    
+    const bottomRef = useRef<HTMLDivElement>(null)
+
     useEffect(() => {
     const fetchSession = async () => {
         try {
@@ -27,17 +27,24 @@ function App() {
       fetchSession()
     }, [])
 
+    useEffect(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    }, [messages])
+
     const handleResearch = async () => {
+        if (!query.trim() || isLoading) return
         setIsLoading(true)
-        let message : Message = { role: "user", content: query}
-        setMessages([...messages,message])
+        const userQuery = query
+        setQuery("")
+        let message : Message = { role: "user", content: userQuery }
+        setMessages(prev => [...prev, message])
         let assistantMsg: Message = { role: 'assistant', content: ''}
-        setMessages(prev=>[...prev,assistantMsg])
+        setMessages(prev => [...prev, assistantMsg])
         try {
             const res = await fetch("http://localhost:8000/research/stream", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ topic: query,session_id: sessionId })
+                body: JSON.stringify({ topic: userQuery, session_id: sessionId })
             })
             const reader = res.body!.getReader()
             const decoder = new TextDecoder()
@@ -58,29 +65,51 @@ function App() {
         }
     }
 
-    // UI goes here
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault()
+        handleResearch()
+      }
+    }
+
+    // Pair messages into exchanges: each user message + following assistant reply
+    const exchanges: Array<{ user: Message; assistant: Message | null }> = []
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i].role === "user") {
+        const next = messages[i + 1]
+        exchanges.push({
+          user: messages[i],
+          assistant: next?.role === "assistant" ? next : null,
+        })
+        if (next?.role === "assistant") i++
+      }
+    }
+
     return (
     <div className="container">
       <h1>Research Assistant</h1>
-      {isLoading && <p className="loading">Researching, please wait...</p>}
-        <div className="results">
-          <div className="summary">
-            {messages.map((message, index) => message.role === "user" ?
-              <div key={index}>
-                <div>User</div>
-                <div><ReactMarkdown>{message.content}</ReactMarkdown></div>
+      <div className="chat-window">
+        {exchanges.map((exchange, index) => (
+          <div key={index} className="exchange">
+            <div className="bubble user-bubble">{exchange.user.content}</div>
+            {exchange.assistant !== null && (
+              <div className="bubble assistant-bubble">
+                {exchange.assistant.content === "" && isLoading
+                  ? <span className="typing-indicator">Researching…</span>
+                  : <ReactMarkdown>{exchange.assistant.content}</ReactMarkdown>
+                }
               </div>
-              : <div key={index}>
-                <div>Assistant</div>
-                <div><ReactMarkdown>{message.content}</ReactMarkdown></div>
-              </div>)}
+            )}
           </div>
-        </div>
-        <div className="search-bar">
+        ))}
+        <div ref={bottomRef} />
+      </div>
+      <div className="input-bar">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Enter a research topic..."
         />
         <button onClick={handleResearch} disabled={isLoading}>
