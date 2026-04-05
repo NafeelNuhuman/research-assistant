@@ -11,6 +11,7 @@ import requests
 import config as app_config
 
 checkpointer = MemorySaver()
+_cache: dict[str,str] = {}
 
 @tool
 def fetch_page_content(url:str) -> str:
@@ -96,7 +97,11 @@ def research(topic:str, session_id:str) -> str:
     return result["messages"][-1].content
 
 def research_stream(topic:str, session_id:str):
+    if topic.lower() in _cache:
+        yield json.dumps({"type":"content","content": _cache.get(topic.lower())}) + "\n"
+        return
     agent =  get_agent()
+    cacheStr = ''
     for chunk in agent.stream(
         {"messages": [{"role": "user", "content": topic}]},
         config={"recursion_limit": app_config.MAX_ITERATIONS,
@@ -106,9 +111,10 @@ def research_stream(topic:str, session_id:str):
         message = chunk[0]
         if isinstance(message, AIMessageChunk):
             if (not message.tool_calls) and message.content: 
+                cacheStr += message.content
                 yield json.dumps({"type":"content","content": message.content}) + "\n"
             else:
                 for call in message.tool_calls:
                     if 'name' in call and 'args' in call:
                         yield json.dumps({ "type": "tool_call", "tool": call["name"], "args": call["args"] }) + "\n"
-
+    _cache[topic.lower()] = cacheStr
