@@ -13,6 +13,7 @@ function App() {
     const [sessionId, setSessionId] = useState<string>("")
     const [messages, setMessages] = useState<Array<Message>>([])
     const bottomRef = useRef<HTMLDivElement>(null)
+    const [toolStatus, setToolStatus] = useState<string>("")
 
     useEffect(() => {
     const fetchSession = async () => {
@@ -53,15 +54,30 @@ function App() {
               const { done, value } = await reader.read()
               if(done) break
               const chunk = decoder.decode(value)
-              setMessages(prev => [
-                ...prev.slice(0, -1),
-                { ...prev[prev.length - 1], content: prev[prev.length - 1].content + chunk }
-              ])
+              const chunks = chunk.split("\n")
+              for(let line of chunks)
+              {
+                if (!line.trim()) continue
+                const json = JSON.parse(line)
+                switch(json.type) {
+                  case 'tool_call':
+                    setToolStatus("using " + json.tool + " tool...")
+                    break
+                  case 'content':
+                    setToolStatus("")
+                    setMessages(prev => [
+                      ...prev.slice(0, -1),
+                      { ...prev[prev.length - 1], content: prev[prev.length - 1].content + json.content }
+                    ])
+                    break
+                }
+              }
             }
         } catch (error) {
             console.error("Error:", error)
         } finally {
             setIsLoading(false)
+            setToolStatus("")
         }
     }
 
@@ -95,7 +111,9 @@ function App() {
             {exchange.assistant !== null && (
               <div className="bubble assistant-bubble">
                 {exchange.assistant.content === "" && isLoading
-                  ? <span className="typing-indicator">Researching…</span>
+                  ? toolStatus.length == 0
+                    ? <span className="typing-indicator">Researching…</span> 
+                    : <span className="typing-indicator">{toolStatus}</span>
                   : <ReactMarkdown>{exchange.assistant.content}</ReactMarkdown>
                 }
               </div>

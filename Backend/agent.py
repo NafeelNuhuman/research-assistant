@@ -1,3 +1,5 @@
+import json
+
 from langchain_ollama import ChatOllama
 from langchain.agents import create_agent
 from langchain_core.tools import tool
@@ -102,7 +104,11 @@ def research_stream(topic:str, session_id:str):
         stream_mode="messages"        
     ):
         message = chunk[0]
-        if isinstance(message, AIMessageChunk) and message.content:
-            if not message.tool_calls: 
-                yield message.content
+        if isinstance(message, AIMessageChunk):
+            if (not message.tool_calls) and message.content: 
+                yield json.dumps({"type":"content","content": message.content}) + "\n"
+            else:
+                for call in message.tool_calls:
+                    if 'name' in call and 'args' in call:
+                        yield json.dumps({ "type": "tool_call", "tool": call["name"], "args": call["args"] }) + "\n"
 
