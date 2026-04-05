@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'
 import "./App.css"
 
 type Message = {
@@ -114,7 +115,7 @@ function App() {
                   ? toolStatus.length == 0
                     ? <span className="typing-indicator">Researching…</span> 
                     : <span className="typing-indicator">{toolStatus}</span>
-                  : <ReactMarkdown>{exchange.assistant.content}</ReactMarkdown>
+                  : <ReactMarkdown remarkPlugins={[remarkGfm]}>{exchange.assistant.content}</ReactMarkdown>
                 }
               </div>
             )}
