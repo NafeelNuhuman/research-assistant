@@ -2,4 +2,5 @@ LLM_MODEL = 'qwen3.5:397b-cloud'
 FASTAPI_PORT = 8000
 MAX_ITERATIONS = 13
 MAX_SEARCH_RESULTS = 5
+SQLITE_DB_PATH = "research.db"
 session_id = ""

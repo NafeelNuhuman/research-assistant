@@ -11,3 +11,10 @@ Frontend/build/
 
 # General
 .DS_Store
+
+# Claude
+docs/
+CLAUDE.md
+
+# Database
+Backend/research.db

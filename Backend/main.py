@@ -1,13 +1,22 @@
+import json
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
+from contextlib import asynccontextmanager
+import uuid
 import agent
 import config as app_config
+import database
 import re
-import uuid
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    database.init_db()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +39,19 @@ async def root():
 
 @app.get("/session")
 async def getSessionId():
-    return {"session_id":str(uuid.uuid4())}
+    session_id = str(uuid.uuid4())
+    database.create_session(session_id=session_id)
+    return {"session_id":session_id}
+
+
+@app.get("/sessions")
+async def getSessions():
+    return {"sessions": database.get_sessions()}
+
+
+@app.get("/session/{session_id}/messages")
+async def getSessionMessages(session_id: str):
+    return {"messages": database.get_messages(session_id)}
 
 
 @app.post("/research/",  response_model=ResearchResponse)
@@ -54,13 +75,26 @@ async def research( request: ResearchRequest):
 
 @app.post("/research/stream")
 async def research_stream(request: ResearchRequest):
-    return StreamingResponse(
-        agent.research_stream(
+    async def stream_and_save():
+        accumulated = ""
+        for chunk in agent.research_stream(
             topic=request.topic,
             session_id=request.session_id
-        ),
-        media_type="text/event-stream"
-    )
+        ):
+            yield chunk
+            try:
+                data = json.loads(chunk.strip())
+                if data.get("type") == "content":
+                    accumulated += data.get("content", "")
+            except (json.JSONDecodeError, AttributeError):
+                pass
+
+        if accumulated:
+            next_position = database.get_max_position(request.session_id) + 1
+            database.save_message(request.session_id, "user", request.topic, next_position)
+            database.save_message(request.session_id, "assistant", accumulated, next_position + 1)
+
+    return StreamingResponse(stream_and_save(), media_type="text/event-stream")
     
 
 if __name__ == "__main__":
