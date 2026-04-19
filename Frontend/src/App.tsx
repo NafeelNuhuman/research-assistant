@@ -85,6 +85,19 @@ function App() {
       await loadHistory(sid)
     }
 
+    const handleDeleteSession = async (e: React.MouseEvent, sid: string) => {
+      e.stopPropagation()
+      if (isLoading) return
+      await fetch(`http://localhost:8000/session/${sid}`, { method: "DELETE" })
+      if (sid === sessionId) {
+        const res = await fetch("http://localhost:8000/session")
+        const data = await res.json()
+        setSessionId(data.session_id)
+        setMessages([])
+      }
+      await loadSessions()
+    }
+
     const handleResearch = async () => {
         if (!query.trim() || isLoading) return
         setIsLoading(true)
@@ -171,7 +184,14 @@ function App() {
                 onClick={() => handleSelectSession(s.session_id)}
                 title={s.created_at}
               >
-                {s.session_id.slice(0, 8)}…
+                <span className="session-item-label">{s.session_id.slice(0, 8)}…</span>
+                <button
+                  className="delete-session-btn"
+                  onClick={(e) => handleDeleteSession(e, s.session_id)}
+                  title="Delete chat"
+                >
+                  🗑
+                </button>
               </div>
             ))}
           </div>

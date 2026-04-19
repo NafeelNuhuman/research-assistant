@@ -71,3 +71,9 @@ def get_sessions() -> list:
         "SELECT session_id, created_at FROM SESSIONS ORDER BY created_at DESC"
     )
     return [{"session_id": row[0], "created_at": row[1]} for row in cursor.fetchall()]
+
+
+def delete_session(session_id: str) -> None:
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM SESSIONS WHERE session_id = ?", (session_id,))
+    connection.commit()

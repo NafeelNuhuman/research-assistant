@@ -70,14 +70,13 @@ body {
 }
 
 .session-item {
+  display: flex;
+  align-items: center;
   padding: 10px 16px;
   font-size: 0.82rem;
   color: #b0b8cc;
   cursor: pointer;
   border-left: 3px solid transparent;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .session-item:hover {
@@ -89,6 +88,37 @@ body {
   border-left-color: #4a90e2;
   background: rgba(74,144,226,0.12);
   color: #ffffff;
+}
+
+.session-item-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.delete-session-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: transparent;
+  cursor: pointer;
+  padding: 2px 4px;
+  margin-left: 4px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.session-item:hover .delete-session-btn {
+  color: #b0b8cc;
+}
+
+.delete-session-btn:hover {
+  color: #ff6b6b !important;
+  background: rgba(255, 107, 107, 0.12);
 }
 
 /* ── Main chat area ── */

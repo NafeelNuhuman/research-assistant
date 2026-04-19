@@ -54,6 +54,12 @@ async def getSessionMessages(session_id: str):
     return {"messages": database.get_messages(session_id)}
 
 
+@app.delete("/session/{session_id}")
+async def deleteSession(session_id: str):
+    database.delete_session(session_id)
+    return {"deleted": session_id}
+
+
 @app.post("/research/",  response_model=ResearchResponse)
 async def research( request: ResearchRequest):
     output = agent.research(topic=request.topic, session_id=request.session_id)
