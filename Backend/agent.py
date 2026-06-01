@@ -21,7 +21,7 @@ def generate_title(topic: str) -> str:
             "Respond with the title only, no punctuation."
         )
         response = llm.invoke(prompt)
-        return response.content.strip()
+        return str(response.content).strip()[:80]
     except Exception:
         return topic[:50]
 
