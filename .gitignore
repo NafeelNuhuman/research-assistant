@@ -16,4 +16,7 @@ Frontend/build/
 docs/
 
 # Database
-Backend/research.db.worktrees/
+Backend/research.db
+
+# Worktrees
+.worktrees/

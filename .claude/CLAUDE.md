@@ -60,7 +60,15 @@ Three processes must run simultaneously: Ollama, FastAPI backend, React frontend
 
 ### Frontend (`Frontend/src/`)
 
-- **`App.tsx`** — Single-component React app. On mount, fires parallel `Promise.all` fetches for a new session and the full sessions list. Layout: two-column flex — `<aside className="sidebar">` (session list + New Chat button + per-session delete) + `<div className="container">` (chat window + input bar). Session items show first 8 chars of UUID. Streaming: reads NDJSON from `/research/stream` line-by-line; `tool_call` lines update `toolStatus`; `content` lines append to the last assistant message. After stream ends, calls `loadSessions()` to refresh the sidebar. Markdown rendered via `react-markdown` + `remark-gfm`.
+**Types** — `types.ts` defines `Message` (`role`, `content`) and `Session` (`session_id`, `created_at`).
+
+**Hooks:**
+- **`useSession`** — initialises on mount with `Promise.all` for a new session + full session list; exposes `sessionId`, `setSessionId`, `sessions`, `loadSessions`.
+- **`useResearch`** — takes `sessionId` and `loadSessions`; owns `messages`, `isLoading`, `toolStatus`, `query`, `bottomRef`. `handleResearch` POSTs to `/research/stream`, parses NDJSON line-by-line, appends content chunks to the last assistant message, and calls `loadSessions` on completion. `loadHistory` fetches `/session/{sid}/messages` for session switching.
+
+**Components** — `Sidebar`, `ChatWindow`, `InputBar` are pure presentational components receiving props from `App.tsx`. Markdown rendered via `react-markdown` + `remark-gfm`.
+
+**`App.tsx`** — orchestrates the two hooks; owns session-level handlers (`handleNewChat`, `handleSelectSession`, `handleDeleteSession`) that coordinate between `useSession` and `useResearch`, then passes props down to the three components.
 
 - **`App.css`** — `.app-layout` (flex row, 100vh). `.sidebar` (240px, `#1a1a2e`). `.container` (flex: 1). All bubble/exchange/input-bar rules follow.
 
