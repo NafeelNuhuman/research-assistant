@@ -37,3 +37,14 @@ assert match2["title"] is None, f"Expected None, got: {match2['title']}"
 database.delete_session(test_sid)
 database.delete_session(test_sid2)
 print("Session title: PASS")
+
+# Test generate_title fallback (mocks LLM — no Ollama required)
+print("\nTesting generate_title fallback...")
+from unittest.mock import patch
+from agent import generate_title
+
+with patch('agent.ChatOllama') as MockOllama:
+    MockOllama.return_value.invoke.side_effect = Exception("connection refused")
+    result = generate_title("quantum computing")
+    assert result == "quantum computing", f"Expected 'quantum computing', got '{result}'"
+print("generate_title fallback: PASS")

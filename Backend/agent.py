@@ -13,6 +13,18 @@ import config as app_config
 checkpointer = MemorySaver()
 _cache: dict[str,str] = {}
 
+def generate_title(topic: str) -> str:
+    try:
+        llm = ChatOllama(model=app_config.LLM_MODEL)
+        prompt = (
+            f"Give a concise 4-6 word title for a research session about: {topic}. "
+            "Respond with the title only, no punctuation."
+        )
+        response = llm.invoke(prompt)
+        return response.content.strip()
+    except Exception:
+        return topic[:50]
+
 @tool
 def fetch_page_content(url:str) -> str:
     """Fetch and return the text content of a webpage given its URL. 
