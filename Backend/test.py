@@ -48,3 +48,15 @@ with patch('agent.ChatOllama') as MockOllama:
     result = generate_title("quantum computing")
     assert result == "quantum computing", f"Expected 'quantum computing', got '{result}'"
 print("generate_title fallback: PASS")
+
+# Test generate_title happy path
+print("\nTesting generate_title happy path...")
+from unittest.mock import MagicMock
+
+with patch('agent.ChatOllama') as MockOllama:
+    mock_response = MagicMock()
+    mock_response.content = "  Quantum Computing Overview  "
+    MockOllama.return_value.invoke.return_value = mock_response
+    result = generate_title("quantum computing")
+    assert result == "Quantum Computing Overview", f"Got: '{result}'"
+print("generate_title happy path: PASS")
