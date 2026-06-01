@@ -30,8 +30,9 @@ def init_db():
     try:
         connection.execute("ALTER TABLE SESSIONS ADD COLUMN title TEXT")
         connection.commit()
-    except sqlite3.OperationalError:
-        pass  # column already exists
+    except sqlite3.OperationalError as e:
+        if "duplicate column name" not in str(e):
+            raise
 
 
 def create_session(session_id: str) -> None:
