@@ -1,4 +1,6 @@
 import json
+import asyncio
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +12,8 @@ import agent
 import config as app_config
 import database
 import re
+
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -101,10 +105,10 @@ async def research_stream(request: ResearchRequest):
             database.save_message(request.session_id, "assistant", accumulated, next_position + 1)
             if next_position == 0:
                 try:
-                    title = agent.generate_title(request.topic)
+                    title = await asyncio.to_thread(agent.generate_title, request.topic)
                     database.update_session_title(request.session_id, title)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Title generation failed: %s", e)
 
     return StreamingResponse(stream_and_save(), media_type="text/event-stream")
     
