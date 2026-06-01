@@ -99,6 +99,12 @@ async def research_stream(request: ResearchRequest):
             next_position = database.get_max_position(request.session_id) + 1
             database.save_message(request.session_id, "user", request.topic, next_position)
             database.save_message(request.session_id, "assistant", accumulated, next_position + 1)
+            if next_position == 0:
+                try:
+                    title = agent.generate_title(request.topic)
+                    database.update_session_title(request.session_id, title)
+                except Exception:
+                    pass
 
     return StreamingResponse(stream_and_save(), media_type="text/event-stream")
     
