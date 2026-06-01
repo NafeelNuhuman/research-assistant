@@ -6,4 +6,5 @@ export type Message = {
 export type Session = {
   session_id: string;
   created_at: string;
+  title?: string;
 }

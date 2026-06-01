@@ -25,7 +25,9 @@ export function Sidebar({ sessionId, sessions, isLoading, onNewChat, onSelectSes
             onClick={() => onSelectSession(s.session_id)}
             title={s.created_at}
           >
-            <span className="session-item-label">{s.session_id.slice(0, 8)}…</span>
+            <span className="session-item-label">
+              {s.title ?? `${s.session_id.slice(0, 8)}…`}
+            </span>
             <button
               className="delete-session-btn"
               onClick={(e) => onDeleteSession(e, s.session_id)}
