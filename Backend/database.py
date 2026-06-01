@@ -27,6 +27,11 @@ def init_db():
         """
     cursor = connection.cursor()
     cursor.executescript(sessions_table + messages_table)
+    try:
+        connection.execute("ALTER TABLE SESSIONS ADD COLUMN title TEXT")
+        connection.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
 
 
 def create_session(session_id: str) -> None:
@@ -65,12 +70,21 @@ def get_max_position(session_id: str) -> int:
     return cursor.fetchone()[0]
 
 
+def update_session_title(session_id: str, title: str) -> None:
+    cursor = connection.cursor()
+    cursor.execute(
+        "UPDATE SESSIONS SET title = ? WHERE session_id = ?",
+        (title, session_id)
+    )
+    connection.commit()
+
+
 def get_sessions() -> list:
     cursor = connection.cursor()
     cursor.execute(
-        "SELECT session_id, created_at FROM SESSIONS ORDER BY created_at DESC"
+        "SELECT session_id, created_at, title FROM SESSIONS ORDER BY created_at DESC"
     )
-    return [{"session_id": row[0], "created_at": row[1]} for row in cursor.fetchall()]
+    return [{"session_id": row[0], "created_at": row[1], "title": row[2]} for row in cursor.fetchall()]
 
 
 def delete_session(session_id: str) -> None:
